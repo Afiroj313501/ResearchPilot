@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  collections   Collection[]
+  conversations Conversation[]
+
+  @@index([email])
+}
+
+model Collection {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  documents Document[]
+
+  @@index([userId])
+}
+
+model Document {
+  id           String         @id @default(uuid())
+  title        String
+  originalName String
+  fileUrl      String?
+  mimeType     String
+  fileSize     Int?
+  pageCount    Int?
+  status       DocumentStatus @default(PENDING)
+  collectionId String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  collection Collection      @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  chunks     DocumentChunk[]
+
+  @@index([collectionId])
+  @@index([status])
+}
+
+model DocumentChunk {
+  id         String   @id @default(uuid())
+  documentId String
+  content    String
+  pageNumber Int?
+  chunkIndex Int
+  createdAt  DateTime @default(now())
+
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId])
+  @@index([documentId, chunkIndex])
+}
+
+model Conversation {
+  id        String   @id @default(uuid())
+  title     String?
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages Message[]
+
+  @@index([userId])
+}
+
+model Message {
+  id             String      @id @default(uuid())
+  conversationId String
+  role           MessageRole
+  content        String
+  createdAt      DateTime    @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
