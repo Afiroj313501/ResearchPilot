@@ -28,6 +28,21 @@ const getAuthenticatedUserId = (
   return req.userId;
 };
 
+const getCollectionId = (
+  req: AuthenticatedRequest
+): string => {
+  const collectionId = req.params.id;
+
+  if (!collectionId) {
+    throw new AppError(
+      "Collection ID is required",
+      400
+    );
+  }
+
+  return collectionId;
+};
+
 export const create = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -81,7 +96,7 @@ export const getOne = async (
   try {
     const collection = await getCollectionById(
       getAuthenticatedUserId(req),
-      req.params.id
+      getCollectionId(req)
     );
 
     res.status(200).json({
@@ -104,7 +119,7 @@ export const update = async (
   try {
     const collection = await updateCollection(
       getAuthenticatedUserId(req),
-      req.params.id,
+      getCollectionId(req),
       req.body
     );
 
@@ -128,7 +143,7 @@ export const remove = async (
   try {
     await deleteCollection(
       getAuthenticatedUserId(req),
-      req.params.id
+      getCollectionId(req)
     );
 
     res.status(200).json({
