@@ -10,6 +10,7 @@ import { errorHandler } from "./middleware/error.middleware";
 import { notFoundHandler } from "./middleware/not-found.middleware";
 import userRoutes from "./routes/user.routes";
 import collectionRoutes from "./routes/collection.routes";
+import documentRoutes from "./routes/document.routes";
 
 dotenv.config();
 
@@ -31,6 +32,7 @@ app.use(
 // Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use("/api/documents", documentRoutes);
 
 // Logging
 app.use(morgan("dev"));

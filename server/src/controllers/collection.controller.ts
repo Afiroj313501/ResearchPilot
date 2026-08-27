@@ -1,5 +1,4 @@
 import {
-  Request,
   Response,
   NextFunction,
 } from "express";
@@ -15,6 +14,9 @@ import {
 import type { AuthenticatedRequest } from "../middleware/auth.middleware";
 import { AppError } from "../utils/app-error";
 
+/**
+ * Get authenticated user ID
+ */
 const getAuthenticatedUserId = (
   req: AuthenticatedRequest
 ): string => {
@@ -28,6 +30,9 @@ const getAuthenticatedUserId = (
   return req.userId;
 };
 
+/**
+ * Get and validate collection ID
+ */
 const getCollectionId = (
   req: AuthenticatedRequest
 ): string => {
@@ -40,9 +45,19 @@ const getCollectionId = (
     );
   }
 
+  if (Array.isArray(collectionId)) {
+    throw new AppError(
+      "Invalid collection ID",
+      400
+    );
+  }
+
   return collectionId;
 };
 
+/**
+ * Create collection
+ */
 export const create = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -66,6 +81,9 @@ export const create = async (
   }
 };
 
+/**
+ * Get all collections for authenticated user
+ */
 export const getAll = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -88,6 +106,9 @@ export const getAll = async (
   }
 };
 
+/**
+ * Get single collection
+ */
 export const getOne = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -111,6 +132,9 @@ export const getOne = async (
   }
 };
 
+/**
+ * Update collection
+ */
 export const update = async (
   req: AuthenticatedRequest,
   res: Response,
@@ -135,6 +159,9 @@ export const update = async (
   }
 };
 
+/**
+ * Delete collection
+ */
 export const remove = async (
   req: AuthenticatedRequest,
   res: Response,
