@@ -11,6 +11,7 @@ import { notFoundHandler } from "./middleware/not-found.middleware";
 import userRoutes from "./routes/user.routes";
 import collectionRoutes from "./routes/collection.routes";
 import documentRoutes from "./routes/document.routes";
+import chatRoutes from "./routes/chat.routes";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api/documents", documentRoutes);
+app.use("/api/chat", chatRoutes);
 
 // Logging
 app.use(morgan("dev"));
