@@ -12,6 +12,7 @@ import userRoutes from "./routes/user.routes";
 import collectionRoutes from "./routes/collection.routes";
 import documentRoutes from "./routes/document.routes";
 import chatRoutes from "./routes/chat.routes";
+import conversationRoutes from "./routes/conversation.routes";
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api/documents", documentRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/conversations", conversationRoutes);
 
 // Logging
 app.use(morgan("dev"));
