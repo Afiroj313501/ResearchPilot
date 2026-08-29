@@ -1,25 +1,47 @@
 import {
   BrowserRouter,
-  Routes,
-  Route,
   Navigate,
+  Route,
+  Routes,
 } from "react-router-dom";
 
-import Login from "./pages/Login";
-import Dashboard from "./pages/Dashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import CollectionPage from "./pages/Collection";
+
+import Collections from "./pages/Collections";
+import Documents from "./pages/Documents";
+import Chat from "./pages/Chat";
+import Settings from "./pages/Settings";
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Public */}
+
+        {/* ================= PUBLIC ================= */}
+
+        <Route
+          path="/"
+          element={<Home />}
+        />
+
         <Route
           path="/login"
           element={<Login />}
         />
 
-        {/* Protected */}
+        <Route
+          path="/register"
+          element={<Register />}
+        />
+
+        {/* ================= PROTECTED ================= */}
+
         <Route
           path="/dashboard"
           element={
@@ -29,27 +51,68 @@ function App() {
           }
         />
 
-        {/* Root */}
+        {/* Collections list */}
         <Route
-          path="/"
+          path="/collections"
+          element={
+            <ProtectedRoute>
+              <Collections />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Individual collection */}
+        <Route
+          path="/collections/:id"
+          element={
+            <ProtectedRoute>
+              <CollectionPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Documents */}
+        <Route
+          path="/documents"
+          element={
+            <ProtectedRoute>
+              <Documents />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Research Chat */}
+        <Route
+          path="/chat"
+          element={
+            <ProtectedRoute>
+              <Chat />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Settings */}
+        <Route
+          path="/settings"
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* ================= FALLBACK ================= */}
+
+        <Route
+          path="*"
           element={
             <Navigate
-              to="/login"
+              to="/"
               replace
             />
           }
         />
 
-        {/* Unknown routes */}
-        <Route
-          path="*"
-          element={
-            <Navigate
-              to="/login"
-              replace
-            />
-          }
-        />
       </Routes>
     </BrowserRouter>
   );

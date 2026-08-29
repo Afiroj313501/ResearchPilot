@@ -1,18 +1,20 @@
-import fs from "fs/promises";
-
 import prisma from "../config/database";
+
 import { extractPdfText } from "../utils/pdf.util";
+
 import { createChunks } from "../utils/chunk.util";
+
 import { embedDocumentChunks } from "./embedding.service";
 
 export const processDocument = async (
   documentId: string
 ) => {
-  const document = await prisma.document.findUnique({
-    where: {
-      id: documentId,
-    },
-  });
+  const document =
+    await prisma.document.findUnique({
+      where: {
+        id: documentId,
+      },
+    });
 
   if (!document) {
     throw new Error("Document not found");
@@ -23,7 +25,9 @@ export const processDocument = async (
   }
 
   try {
-    // Mark document as processing
+    /**
+     * Mark document as processing.
+     */
     await prisma.document.update({
       where: {
         id: documentId,
@@ -43,7 +47,9 @@ export const processDocument = async (
       `✅ Extracted ${pdf.pageCount} pages`
     );
 
-    // Create chunks
+    /**
+     * Create chunks.
+     */
     const chunks = createChunks(pdf.pages, {
       chunkSize: 1000,
       overlap: 200,
@@ -53,25 +59,45 @@ export const processDocument = async (
       `✂️ Created ${chunks.length} chunks`
     );
 
-    // Store chunks in database
-    await prisma.documentChunk.deleteMany({
-      where: {
-        documentId,
-      },
-    });
+    /**
+     * Check whether chunks already exist.
+     *
+     * If processing is being resumed after a failure,
+     * don't recreate/delete existing chunks.
+     */
+    const existingChunkCount =
+      await prisma.documentChunk.count({
+        where: {
+          documentId,
+        },
+      });
 
-    await prisma.documentChunk.createMany({
-      data: chunks.map((chunk) => ({
-        documentId,
-        content: chunk.content,
-        pageNumber: chunk.pageNumber,
-        chunkIndex: chunk.chunkIndex,
-      })),
-    });
+    if (existingChunkCount === 0) {
+      console.log(
+        "💾 Saving chunks to database..."
+      );
 
-    console.log("💾 Chunks saved to database");
+      await prisma.documentChunk.createMany({
+        data: chunks.map((chunk) => ({
+          documentId,
+          content: chunk.content,
+          pageNumber: chunk.pageNumber,
+          chunkIndex: chunk.chunkIndex,
+        })),
+      });
 
-    // Update page count
+      console.log(
+        `💾 Saved ${chunks.length} chunks`
+      );
+    } else {
+      console.log(
+        `♻️ Found ${existingChunkCount} existing chunks. Resuming processing...`
+      );
+    }
+
+    /**
+     * Update page count.
+     */
     await prisma.document.update({
       where: {
         id: documentId,
@@ -81,17 +107,42 @@ export const processDocument = async (
       },
     });
 
-    // Generate embeddings
-    console.log("🧠 Generating embeddings...");
+    /**
+     * Generate missing embeddings.
+     */
+    console.log(
+      "🧠 Generating missing embeddings..."
+    );
 
     const embeddingResult =
       await embedDocumentChunks(documentId);
 
     console.log(
-      `✅ Generated ${embeddingResult.processed} embeddings`
+      `✅ Embedding process finished`
     );
 
-    // Mark document ready
+    console.log(
+      `📊 Total chunks: ${embeddingResult.totalChunks}`
+    );
+
+    console.log(
+      `📊 Newly embedded: ${embeddingResult.processed}`
+    );
+
+    console.log(
+      `📊 Remaining: ${embeddingResult.remaining}`
+    );
+
+    /**
+     * Only mark READY if every chunk has
+     * an embedding.
+     */
+    if (embeddingResult.remaining > 0) {
+      throw new Error(
+        `Document still has ${embeddingResult.remaining} chunks without embeddings`
+      );
+    }
+
     const updatedDocument =
       await prisma.document.update({
         where: {
@@ -101,6 +152,10 @@ export const processDocument = async (
           status: "READY",
         },
       });
+
+    console.log(
+      `🎉 Document ${documentId} is READY`
+    );
 
     return updatedDocument;
   } catch (error) {

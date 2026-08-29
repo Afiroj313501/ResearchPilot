@@ -42,3 +42,28 @@ export const createDocument = async (
 
   return document;
 };
+
+export const getCollectionDocuments = async (
+  userId: string,
+  collectionId: string
+) => {
+  const collection = await prisma.collection.findFirst({
+    where: {
+      id: collectionId,
+      userId,
+    },
+  });
+
+  if (!collection) {
+    throw new AppError("Collection not found", 404);
+  }
+
+  return prisma.document.findMany({
+    where: {
+      collectionId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+};

@@ -1,7 +1,13 @@
-import { Request, Response, NextFunction } from "express";
+import {
+  Request,
+  Response,
+  NextFunction,
+} from "express";
+
 import { verifyToken } from "../utils/jwt";
 
-export interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest
+  extends Request {
   userId?: string;
 }
 
@@ -11,9 +17,13 @@ export const authenticate = (
   next: NextFunction
 ): void => {
   try {
-    const authHeader = req.headers.authorization;
+    const authHeader =
+      req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    if (
+      !authHeader ||
+      !authHeader.startsWith("Bearer ")
+    ) {
       res.status(401).json({
         success: false,
         message: "Authentication required",
@@ -22,7 +32,7 @@ export const authenticate = (
       return;
     }
 
-    const token = authHeader.split(" ")[1];
+    const token = authHeader.substring(7).trim();
 
     if (!token) {
       res.status(401).json({
@@ -35,10 +45,24 @@ export const authenticate = (
 
     const payload = verifyToken(token);
 
+    if (!payload?.userId) {
+      res.status(401).json({
+        success: false,
+        message: "Invalid authentication token",
+      });
+
+      return;
+    }
+
     req.userId = payload.userId;
 
     next();
   } catch (error) {
+    console.error(
+      "Authentication error:",
+      error
+    );
+
     res.status(401).json({
       success: false,
       message: "Invalid or expired token",

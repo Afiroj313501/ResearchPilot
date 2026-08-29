@@ -14,6 +14,8 @@
   background: #020617;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 * {
@@ -21,6 +23,7 @@
 }
 
 html {
+  scroll-behavior: smooth;
   background: #020617;
 }
 
@@ -29,14 +32,75 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background: #020617;
+  color: #e2e8f0;
+}
+
+#root {
+  min-height: 100vh;
 }
 
 button,
 input,
-textarea {
+textarea,
+select {
   font: inherit;
 }
 
 button {
   cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+::selection {
+  background: rgba(34, 211, 238, 0.25);
+  color: #ffffff;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.float {
+  animation: float 5s ease-in-out infinite;
+}
+
+.pulse-glow {
+  animation: pulseGlow 4s ease-in-out infinite;
 }
