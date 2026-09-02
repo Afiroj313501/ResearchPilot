@@ -3,6 +3,7 @@ import { Router } from "express";
 import {
   uploadDocument,
   getDocuments,
+  removeDocument,
 } from "../controllers/document.controller";
 
 import { authenticate } from "../middleware/auth.middleware";
@@ -25,5 +26,7 @@ router.get(
   authenticate,
   getDocuments
 );
+
+router.delete("/:id", authenticate, removeDocument);
 
 export default router;

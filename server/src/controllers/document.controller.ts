@@ -6,6 +6,7 @@ import {
 import {
   createDocument,
   getCollectionDocuments,
+  deleteDocument,
 } from "../services/document.service";
 
 import {
@@ -124,4 +125,16 @@ export const getDocuments = async (
   } catch (error) {
     next(error);
   }
+};
+
+export const removeDocument = async (
+  req: AuthenticatedRequest, res: Response, next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.userId) throw new AppError("Authentication required", 401);
+    const documentId = req.params.id;
+    if (!documentId || Array.isArray(documentId)) throw new AppError("Invalid document ID", 400);
+    await deleteDocument(req.userId, documentId);
+    res.status(200).json({ success: true, message: "Document deleted successfully" });
+  } catch (error) { next(error); }
 };

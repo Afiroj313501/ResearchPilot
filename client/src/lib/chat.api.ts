@@ -5,6 +5,7 @@ export interface ChatSource {
   pageNumber: number | null;
   chunkIndex: number;
   similarity: number;
+  documentTitle: string;
 }
 
 export interface ChatResponse {

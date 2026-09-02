@@ -18,14 +18,14 @@ export interface ConversationMessage {
   createdAt: string;
 }
 
-export const getConversations = async () => {
+export const getConversations = async (collectionId?: string) => {
   const response = await api.get<{
     success: boolean;
     message: string;
     data: {
       conversations: Conversation[];
     };
-  }>("/conversations");
+  }>("/conversations", { params: collectionId ? { collectionId } : undefined });
 
   return response.data;
 };

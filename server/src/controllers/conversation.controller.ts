@@ -20,7 +20,10 @@ export const getConversations = async (
       throw new AppError("Authentication required", 401);
     }
 
-    const conversations = await getUserConversations(req.userId);
+    const collectionId = typeof req.query.collectionId === "string"
+      ? req.query.collectionId
+      : undefined;
+    const conversations = await getUserConversations(req.userId, collectionId);
 
     res.status(200).json({
       success: true,

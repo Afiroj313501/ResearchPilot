@@ -16,6 +16,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import {
   getCollectionDocuments,
   uploadDocument,
+  deleteDocument,
   type Document,
 } from "../lib/document.api";
 
@@ -510,6 +511,16 @@ function DocumentCard({
 
         <button
           type="button"
+          onClick={async () => {
+            if (!window.confirm("Delete this paper?")) return;
+            try {
+              await deleteDocument(document.id);
+              window.location.reload();
+            } catch {
+              window.alert("Unable to delete this paper.");
+            }
+          }}
+          aria-label={`Delete ${document.title}`}
           className="rounded-lg p-2 text-slate-700 transition hover:bg-white/[0.04] hover:text-slate-300"
         >
           <MoreHorizontal size={17} />

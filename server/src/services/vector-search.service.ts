@@ -8,6 +8,7 @@ export interface SimilarChunk {
   pageNumber: number | null;
   chunkIndex: number;
   similarity: number;
+  documentTitle: string;
 }
 
 export const searchSimilarChunks = async (
@@ -30,6 +31,7 @@ export const searchSimilarChunks = async (
       dc."content",
       dc."pageNumber",
       dc."chunkIndex",
+      d."title" AS "documentTitle",
       1 - (dc."embedding" <=> ${vector}::vector) AS "similarity"
     FROM "DocumentChunk" dc
     INNER JOIN "Document" d

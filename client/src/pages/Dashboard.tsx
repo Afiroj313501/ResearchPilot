@@ -18,6 +18,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/auth.store";
 import api from "../lib/api";
+import { getCollectionDocuments } from "../lib/document.api";
+import { getConversations } from "../lib/conversation.api";
 
 interface Collection {
   id: string;
@@ -39,6 +41,9 @@ function Dashboard() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loadingCollections, setLoadingCollections] = useState(true);
   const [collectionError, setCollectionError] = useState("");
+  const [documentCount, setDocumentCount] = useState(0);
+  const [readyDocumentCount, setReadyDocumentCount] = useState(0);
+  const [queryCount, setQueryCount] = useState(0);
 
   // Create collection modal
   const [createModalOpen, setCreateModalOpen] = useState(false);
@@ -68,6 +73,21 @@ function Dashboard() {
         response.data?.data?.collections || [];
 
       setCollections(fetchedCollections);
+
+      const documentLists = await Promise.all(
+        fetchedCollections.map((collection: Collection) =>
+          getCollectionDocuments(collection.id)
+        )
+      );
+      const documents = documentLists.flatMap(
+        (response) => response.data.documents
+      );
+      setDocumentCount(documents.length);
+      setReadyDocumentCount(
+        documents.filter((document) => document.status === "READY").length
+      );
+      const conversations = await getConversations();
+      setQueryCount(conversations.data.conversations.length);
     } catch (error: any) {
       console.error("Failed to fetch collections:", error);
 
@@ -431,22 +451,22 @@ function Dashboard() {
               <StatCard
                 icon={<FileText size={19} />}
                 label="Documents"
-                value="0"
+                value={String(documentCount)}
                 description="Papers uploaded"
               />
 
               <StatCard
                 icon={<Brain size={19} />}
-                label="Knowledge chunks"
-                value="0"
-                description="Indexed passages"
+                label="Ready for RAG"
+                value={String(readyDocumentCount)}
+                description="Indexed papers"
               />
 
               <StatCard
                 icon={<MessageSquare size={19} />}
                 label="Research queries"
-                value="0"
-                description="Questions answered"
+                value={String(queryCount)}
+                description="Saved discussions"
               />
             </section>
 

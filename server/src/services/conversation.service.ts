@@ -59,6 +59,7 @@ export const createConversation = async (
     await prisma.conversation.create({
       data: {
         userId,
+        collectionId,
         title,
         messages: {
           create: {
@@ -146,11 +147,14 @@ export const getConversationMessages =
   };
 
 export const getUserConversations = async (
-  userId: string
+  userId: string,
+  collectionId?: string
 ) => {
+  // Conversations are scoped to a collection when a collection ID is supplied.
   return prisma.conversation.findMany({
     where: {
       userId,
+      ...(collectionId ? { collectionId } : {}),
     },
     orderBy: {
       updatedAt: "desc",

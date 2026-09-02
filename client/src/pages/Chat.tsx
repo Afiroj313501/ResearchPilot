@@ -1,30 +1,27 @@
-import { MessageSquare, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2, MessageSquare, Plus, Send, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import { askQuestion } from "../lib/chat.api";
+import type { ChatSource } from "../lib/chat.api";
+import { getCollections } from "../lib/collection.api";
+import type { Collection } from "../lib/collection.api";
+import { deleteConversation, getConversation, getConversations } from "../lib/conversation.api";
+import type { Conversation, ConversationMessage } from "../lib/conversation.api";
+
+type Message = ConversationMessage & { sources?: ChatSource[] };
 
 function Chat() {
   const navigate = useNavigate();
-
-  return (
-    <main className="min-h-screen bg-[#060b16] text-slate-100 p-8">
-      <button
-        onClick={() => navigate("/dashboard")}
-        className="mb-8 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"
-      >
-        <ArrowLeft size={16} />
-        Back to Dashboard
-      </button>
-
-      <div className="flex items-center gap-4">
-        <MessageSquare className="text-cyan-400" size={28} />
-        <div>
-          <h1 className="text-2xl font-bold">Research Chat</h1>
-          <p className="text-sm text-slate-500">
-            Ask questions about your research documents.
-          </p>
-        </div>
-      </div>
-    </main>
-  );
+  const [collections, setCollections] = useState<Collection[]>([]); const [collectionId, setCollectionId] = useState("");
+  const [conversations, setConversations] = useState<Conversation[]>([]); const [conversationId, setConversationId] = useState<string>();
+  const [messages, setMessages] = useState<Message[]>([]); const [question, setQuestion] = useState(""); const [loading, setLoading] = useState(false); const [error, setError] = useState("");
+  useEffect(() => { getCollections().then(r => { setCollections(r.data.collections); setCollectionId(r.data.collections[0]?.id ?? ""); }).catch(() => setError("Unable to load collections.")); }, []);
+  useEffect(() => { if (collectionId) getConversations(collectionId).then(r => setConversations(r.data.conversations)).catch(() => setError("Unable to load conversation history.")); }, [collectionId]);
+  const reset = () => { setConversationId(undefined); setMessages([]); setQuestion(""); };
+  const open = async (id: string) => { try { const r = await getConversation(id); setConversationId(id); setMessages(r.data.conversation.messages); } catch { setError("Unable to open this conversation."); } };
+  const submit = async (event: FormEvent) => { event.preventDefault(); if (!collectionId || !question.trim() || loading) return; const text = question.trim(); setQuestion(""); setLoading(true); setError(""); try { const r = await askQuestion(collectionId, text, conversationId); setConversationId(r.data.conversationId); setMessages(current => [...current, { id: `u-${Date.now()}`, conversationId: r.data.conversationId, role: "USER", content: text, createdAt: new Date().toISOString() }, { id: `a-${Date.now()}`, conversationId: r.data.conversationId, role: "ASSISTANT", content: r.data.answer, createdAt: new Date().toISOString(), sources: r.data.sources }]); setConversations((await getConversations(collectionId)).data.conversations); } catch (err: any) { setQuestion(text); setError(err?.response?.data?.message || "ResearchPilot could not answer that question."); } finally { setLoading(false); } };
+  const remove = async (id: string) => { try { await deleteConversation(id); if (id === conversationId) reset(); setConversations(x => x.filter(c => c.id !== id)); } catch { setError("Unable to delete the conversation."); } };
+  return <main className="min-h-screen bg-[#060b16] p-5 text-slate-100 sm:p-8"><div className="mx-auto max-w-6xl"><button onClick={() => navigate("/dashboard")} className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"><ArrowLeft size={16}/> Dashboard</button><div className="mb-6 flex flex-wrap items-end justify-between gap-4"><div><h1 className="flex items-center gap-3 text-2xl font-bold"><MessageSquare className="text-cyan-400"/> Research Chat</h1><p className="mt-1 text-sm text-slate-500">Answers are grounded only in your selected collection.</p></div><select value={collectionId} onChange={e => { setCollectionId(e.target.value); reset(); }} className="rounded-xl border border-white/10 bg-[#0a111f] px-3 py-2 text-sm"><option value="">Select a collection</option>{collections.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></div>{!collections.length && !error ? <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-slate-400">Create a collection and upload a PDF before starting research chat.</div> : <div className="grid gap-5 lg:grid-cols-[260px_1fr]"><aside className="rounded-2xl border border-white/10 bg-[#080e19] p-3"><button onClick={reset} className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl bg-cyan-400 px-3 py-2 text-sm font-semibold text-slate-950"><Plus size={16}/> New conversation</button><p className="px-2 pb-2 text-xs uppercase tracking-wider text-slate-600">History</p>{conversations.map(c => <div key={c.id} className={`group flex items-center gap-1 rounded-lg ${c.id === conversationId ? "bg-white/10" : "hover:bg-white/5"}`}><button onClick={() => open(c.id)} className="min-w-0 flex-1 truncate px-3 py-2 text-left text-sm text-slate-300">{c.title || "Untitled conversation"}</button><button onClick={() => remove(c.id)} className="p-2 text-slate-600 hover:text-red-400"><Trash2 size={15}/></button></div>)}</aside><section className="flex min-h-[560px] flex-col rounded-2xl border border-white/10 bg-[#080e19]"><div className="flex-1 space-y-5 overflow-auto p-5">{messages.length ? messages.map(m => <article key={m.id} className={m.role === "USER" ? "ml-auto max-w-2xl rounded-2xl bg-cyan-400 px-4 py-3 text-slate-950" : "max-w-3xl rounded-2xl border border-white/10 bg-white/[.03] px-4 py-3"}><p className="whitespace-pre-wrap text-sm leading-6">{m.content}</p>{m.sources?.length ? <div className="mt-4 border-t border-white/10 pt-3"><p className="mb-2 text-xs font-semibold text-cyan-300">Sources</p><div className="flex flex-wrap gap-2">{m.sources.map((s, i) => <span key={`${s.documentId}-${s.chunkIndex}`} className="rounded-lg bg-cyan-400/10 px-2 py-1 text-xs text-cyan-200">{i + 1}. {s.documentTitle} · p. {s.pageNumber ?? "—"}</span>)}</div></div> : null}</article>) : <div className="pt-28 text-center text-slate-500">Choose a collection, then ask a question about its ready documents.</div>}{loading && <div className="flex items-center gap-2 text-sm text-cyan-300"><Loader2 className="animate-spin" size={16}/> Searching your papers…</div>}{error && <p className="rounded-xl bg-red-500/10 p-3 text-sm text-red-300">{error}</p>}</div><form onSubmit={submit} className="border-t border-white/10 p-4"><div className="flex gap-2"><textarea value={question} onChange={e => setQuestion(e.target.value)} disabled={!collectionId || loading} rows={2} placeholder="Ask a question about the selected collection…" className="flex-1 resize-none rounded-xl border border-white/10 bg-black/20 p-3 text-sm outline-none focus:border-cyan-400/50 disabled:opacity-50"/><button disabled={!collectionId || !question.trim() || loading} className="rounded-xl bg-cyan-400 px-4 text-slate-950 disabled:opacity-40"><Send size={18}/></button></div></form></section></div>}</div></main>;
 }
-
 export default Chat;

@@ -1,30 +1,9 @@
-import { Settings as SettingsIcon, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2, Settings as SettingsIcon } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-
-function Settings() {
-  const navigate = useNavigate();
-
-  return (
-    <main className="min-h-screen bg-[#060b16] text-slate-100 p-8">
-      <button
-        onClick={() => navigate("/dashboard")}
-        className="mb-8 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"
-      >
-        <ArrowLeft size={16} />
-        Back to Dashboard
-      </button>
-
-      <div className="flex items-center gap-4">
-        <SettingsIcon className="text-cyan-400" size={28} />
-        <div>
-          <h1 className="text-2xl font-bold">Settings</h1>
-          <p className="text-sm text-slate-500">
-            Manage your ResearchPilot workspace settings.
-          </p>
-        </div>
-      </div>
-    </main>
-  );
-}
-
+import { getProfile, updateProfile } from "../lib/user.api";
+import type { Profile } from "../lib/user.api";
+import { useAuthStore } from "../store/auth.store";
+function Settings() { const navigate=useNavigate();const setAuth=useAuthStore(s=>s.setAuth);const token=useAuthStore(s=>s.token);const [profile,setProfile]=useState<Profile|null>(null);const [name,setName]=useState("");const [saving,setSaving]=useState(false);const [message,setMessage]=useState("");useEffect(()=>{getProfile().then(r=>{setProfile(r.data.user);setName(r.data.user.name??"");}).catch(()=>setMessage("Unable to load your account."));},[]);const save=async(e:FormEvent)=>{e.preventDefault();setSaving(true);setMessage("");try{const r=await updateProfile(name.trim());setProfile(r.data.user);if(token)setAuth(token,r.data.user);setMessage("Profile updated.");}catch{setMessage("Unable to update your profile.");}finally{setSaving(false);}};return <main className="min-h-screen bg-[#060b16] p-6 text-slate-100"><div className="mx-auto max-w-xl"><button onClick={()=>navigate("/dashboard")} className="mb-7 inline-flex items-center gap-2 text-sm text-slate-400"><ArrowLeft size={16}/> Dashboard</button><div className="mb-7 flex items-center gap-3"><SettingsIcon className="text-cyan-400"/><div><h1 className="text-2xl font-bold">Settings</h1><p className="text-sm text-slate-500">Manage your account information.</p></div></div><form onSubmit={save} className="rounded-2xl border border-white/10 bg-[#080e19] p-6"><label className="text-sm text-slate-400">Display name</label><input value={name} onChange={e=>setName(e.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3"/><label className="mt-5 block text-sm text-slate-400">Email</label><input value={profile?.email??""} disabled className="mt-2 w-full rounded-xl border border-white/10 bg-black/20 px-4 py-3 text-slate-500"/><p className="mt-2 text-xs text-slate-600">Email and password changes are not available in this MVP.</p>{message&&<p className={`mt-4 text-sm ${message === "Profile updated." ? "text-emerald-400":"text-red-300"}`}>{message}</p>}<button disabled={saving} className="mt-6 inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-4 py-2.5 font-semibold text-slate-950 disabled:opacity-50">{saving&&<Loader2 className="animate-spin" size={16}/>}Save changes</button></form></div></main>; }
 export default Settings;

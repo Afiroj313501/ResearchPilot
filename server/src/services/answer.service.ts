@@ -27,6 +27,7 @@ export interface RAGAnswer {
     pageNumber: number | null;
     chunkIndex: number;
     similarity: number;
+    documentTitle: string;
   }[];
 }
 

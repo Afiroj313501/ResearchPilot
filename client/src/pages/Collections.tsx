@@ -1,30 +1,8 @@
-import { FolderOpen, ArrowLeft } from "lucide-react";
+import { ArrowLeft, FolderOpen, Pencil, Plus, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-
-function Collections() {
-  const navigate = useNavigate();
-
-  return (
-    <main className="min-h-screen bg-[#060b16] text-slate-100 p-8">
-      <button
-        onClick={() => navigate("/dashboard")}
-        className="mb-8 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"
-      >
-        <ArrowLeft size={16} />
-        Back to Dashboard
-      </button>
-
-      <div className="flex items-center gap-4">
-        <FolderOpen className="text-cyan-400" size={28} />
-        <div>
-          <h1 className="text-2xl font-bold">Collections</h1>
-          <p className="text-sm text-slate-500">
-            Manage your research collections.
-          </p>
-        </div>
-      </div>
-    </main>
-  );
-}
-
+import { createCollection, deleteCollection, getCollections, updateCollection } from "../lib/collection.api";
+import type { Collection } from "../lib/collection.api";
+function Collections() { const navigate=useNavigate(); const [items,setItems]=useState<Collection[]>([]); const [name,setName]=useState(""); const [editing,setEditing]=useState<Collection|null>(null); const [error,setError]=useState(""); const load=()=>getCollections().then(r=>setItems(r.data.collections)).catch(()=>setError("Unable to load collections.")); useEffect(()=>{load();},[]); const save=async(e:FormEvent)=>{e.preventDefault();if(!name.trim())return;try{if(editing)await updateCollection(editing.id,{name:name.trim()});else await createCollection({name:name.trim()});setName("");setEditing(null);load();}catch{setError("Unable to save collection.");}};const remove=async(id:string)=>{if(!confirm("Delete this collection and its papers?"))return;try{await deleteCollection(id);setItems(x=>x.filter(c=>c.id!==id));}catch{setError("Unable to delete collection.");}};return <main className="min-h-screen bg-[#060b16] p-6 text-slate-100"><div className="mx-auto max-w-5xl"><button onClick={()=>navigate("/dashboard")} className="mb-7 inline-flex items-center gap-2 text-sm text-slate-400"><ArrowLeft size={16}/> Dashboard</button><div className="mb-7 flex items-center gap-3"><FolderOpen className="text-cyan-400"/><div><h1 className="text-2xl font-bold">Collections</h1><p className="text-sm text-slate-500">Organize papers into focused research spaces.</p></div></div><form onSubmit={save} className="mb-6 flex gap-2"><input value={name} onChange={e=>setName(e.target.value)} placeholder={editing?"Rename collection":"New collection name"} className="flex-1 rounded-xl border border-white/10 bg-[#0a111f] px-4 py-3 text-sm"/><button className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 px-4 py-2 font-semibold text-slate-950">{editing?<Pencil size={16}/>:<Plus size={16}/>}{editing?"Save":"Create"}</button>{editing&&<button type="button" onClick={()=>{setEditing(null);setName("");}} className="px-3 text-sm text-slate-400">Cancel</button>}</form>{error&&<p className="mb-4 text-sm text-red-300">{error}</p>}<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{items.map(c=><article key={c.id} className="rounded-2xl border border-white/10 bg-[#080e19] p-5"><button onClick={()=>navigate(`/collections/${c.id}`)} className="w-full text-left"><FolderOpen className="mb-4 text-cyan-400"/><h2 className="truncate font-semibold">{c.name}</h2><p className="mt-1 text-xs text-slate-500">Open papers and upload PDFs</p></button><div className="mt-5 flex gap-2 border-t border-white/10 pt-3"><button onClick={()=>{setEditing(c);setName(c.name);}} className="text-xs text-slate-400 hover:text-white">Rename</button><button onClick={()=>remove(c.id)} className="ml-auto inline-flex items-center gap-1 text-xs text-red-400"><Trash2 size={13}/> Delete</button></div></article>)}</div>{!items.length&&!error&&<p className="py-10 text-center text-slate-500">No collections yet.</p>}</div></main>; }
 export default Collections;

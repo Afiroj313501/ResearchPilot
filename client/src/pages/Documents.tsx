@@ -1,30 +1,7 @@
-import { FileText, ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText, FolderOpen } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-function Documents() {
-  const navigate = useNavigate();
-
-  return (
-    <main className="min-h-screen bg-[#060b16] text-slate-100 p-8">
-      <button
-        onClick={() => navigate("/dashboard")}
-        className="mb-8 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white"
-      >
-        <ArrowLeft size={16} />
-        Back to Dashboard
-      </button>
-
-      <div className="flex items-center gap-4">
-        <FileText className="text-cyan-400" size={28} />
-        <div>
-          <h1 className="text-2xl font-bold">Documents</h1>
-          <p className="text-sm text-slate-500">
-            Upload and manage your research papers.
-          </p>
-        </div>
-      </div>
-    </main>
-  );
-}
-
+import { getCollections } from "../lib/collection.api";
+import type { Collection } from "../lib/collection.api";
+function Documents() { const navigate=useNavigate();const [collections,setCollections]=useState<Collection[]>([]);const [error,setError]=useState("");useEffect(()=>{getCollections().then(r=>setCollections(r.data.collections)).catch(()=>setError("Unable to load collections."));},[]);return <main className="min-h-screen bg-[#060b16] p-6 text-slate-100"><div className="mx-auto max-w-5xl"><button onClick={()=>navigate("/dashboard")} className="mb-7 inline-flex items-center gap-2 text-sm text-slate-400"><ArrowLeft size={16}/> Dashboard</button><div className="mb-7 flex items-center gap-3"><FileText className="text-cyan-400"/><div><h1 className="text-2xl font-bold">Research papers</h1><p className="text-sm text-slate-500">Open a collection to upload, track processing, and manage its PDFs.</p></div></div>{error&&<p className="text-red-300">{error}</p>}<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{collections.map(c=><button key={c.id} onClick={()=>navigate(`/collections/${c.id}`)} className="rounded-2xl border border-white/10 bg-[#080e19] p-5 text-left hover:border-cyan-400/30"><FolderOpen className="mb-4 text-cyan-400"/><h2 className="font-semibold">{c.name}</h2><p className="mt-2 text-sm text-slate-500">View and upload papers</p></button>)}</div>{!collections.length&&!error&&<div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-slate-500">Create a collection before uploading a paper.</div>}</div></main>; }
 export default Documents;

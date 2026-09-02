@@ -9,6 +9,7 @@ export interface RAGContext {
     pageNumber: number | null;
     chunkIndex: number;
     similarity: number;
+    documentTitle: string;
   }[];
 }
 
@@ -50,6 +51,7 @@ ${result.content}
     pageNumber: result.pageNumber,
     chunkIndex: result.chunkIndex,
     similarity: Number(result.similarity),
+    documentTitle: result.documentTitle,
   }));
 
   return {
