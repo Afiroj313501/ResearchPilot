@@ -90,6 +90,7 @@ model Message {
   conversationId String
   role           MessageRole
   content        String
+  sources        Json?
   createdAt      DateTime    @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)

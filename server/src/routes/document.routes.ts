@@ -4,6 +4,8 @@ import {
   uploadDocument,
   getDocuments,
   removeDocument,
+  downloadDocument,
+  updateDocument,
 } from "../controllers/document.controller";
 
 import { authenticate } from "../middleware/auth.middleware";
@@ -28,5 +30,7 @@ router.get(
 );
 
 router.delete("/:id", authenticate, removeDocument);
+router.patch("/:id", authenticate, updateDocument);
+router.get("/:id/download", authenticate, downloadDocument);
 
 export default router;

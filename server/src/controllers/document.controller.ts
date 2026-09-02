@@ -7,6 +7,8 @@ import {
   createDocument,
   getCollectionDocuments,
   deleteDocument,
+  getDocumentForUser,
+  updateDocumentTitle,
 } from "../services/document.service";
 
 import {
@@ -136,5 +138,27 @@ export const removeDocument = async (
     if (!documentId || Array.isArray(documentId)) throw new AppError("Invalid document ID", 400);
     await deleteDocument(req.userId, documentId);
     res.status(200).json({ success: true, message: "Document deleted successfully" });
+  } catch (error) { next(error); }
+};
+
+export const updateDocument = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    if (!req.userId) throw new AppError("Authentication required", 401);
+    const documentId = req.params.id;
+    const title = typeof req.body.title === "string" ? req.body.title.trim() : "";
+    if (!documentId || Array.isArray(documentId) || !title) throw new AppError("A document title is required", 400);
+    const document = await updateDocumentTitle(req.userId, documentId, title);
+    res.status(200).json({ success: true, message: "Document updated successfully", data: { document } });
+  } catch (error) { next(error); }
+};
+
+export const downloadDocument = async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    if (!req.userId) throw new AppError("Authentication required", 401);
+    const documentId = req.params.id;
+    if (!documentId || Array.isArray(documentId)) throw new AppError("Invalid document ID", 400);
+    const document = await getDocumentForUser(req.userId, documentId);
+    if (!document.fileUrl) throw new AppError("Document file not found", 404);
+    res.download(document.fileUrl, document.originalName);
   } catch (error) { next(error); }
 };

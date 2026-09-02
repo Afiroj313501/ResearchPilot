@@ -65,3 +65,13 @@ export const deleteDocument = async (documentId: string) => {
   const response = await api.delete(`/documents/${documentId}`);
   return response.data;
 };
+
+export const updateDocumentTitle = async (documentId: string, title: string) =>
+  (await api.patch(`/documents/${documentId}`, { title })).data;
+
+export const downloadDocument = async (documentId: string, filename: string) => {
+  const response = await api.get(`/documents/${documentId}/download`, { responseType: "blob" });
+  const url = URL.createObjectURL(response.data);
+  const link = window.document.createElement("a");
+  link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url);
+};

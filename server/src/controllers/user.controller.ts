@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import prisma from "../config/database";
 import { AppError } from "../utils/app-error";
+import { comparePassword, hashPassword } from "../utils/password";
 
 export const getProfile = async (
   req: Request & { userId?: string },
@@ -60,7 +61,18 @@ export const updateProfile = async (
       );
     }
 
-    const { name } = req.body;
+    const { name, email, currentPassword, newPassword } = req.body;
+
+    const existingUser = await prisma.user.findUnique({ where: { id: req.userId } });
+    if (!existingUser) throw new AppError("User not found", 404);
+    if (newPassword && !(await comparePassword(currentPassword, existingUser.passwordHash))) {
+      throw new AppError("Current password is incorrect", 400);
+    }
+
+    if (email && email !== existingUser.email) {
+      const emailOwner = await prisma.user.findUnique({ where: { email } });
+      if (emailOwner) throw new AppError("That email address is already in use", 409);
+    }
 
     const user = await prisma.user.update({
       where: {
@@ -68,6 +80,8 @@ export const updateProfile = async (
       },
       data: {
         ...(name !== undefined && { name }),
+        ...(email !== undefined && { email }),
+        ...(newPassword && { passwordHash: await hashPassword(newPassword) }),
       },
       select: {
         id: true,

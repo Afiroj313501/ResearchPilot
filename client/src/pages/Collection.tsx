@@ -5,7 +5,9 @@ import {
   FileText,
   Loader2,
   MessageSquare,
-  MoreHorizontal,
+  Download,
+  Pencil,
+  Trash2,
   Search,
   Sparkles,
   Upload,
@@ -17,6 +19,8 @@ import {
   getCollectionDocuments,
   uploadDocument,
   deleteDocument,
+  downloadDocument,
+  updateDocumentTitle,
   type Document,
 } from "../lib/document.api";
 
@@ -494,6 +498,7 @@ interface DocumentCardProps {
 function DocumentCard({
   document,
 }: DocumentCardProps) {
+  const [title, setTitle] = useState(document.title);
   const status = document.status;
 
   const isReady = status === "READY";
@@ -509,30 +514,19 @@ function DocumentCard({
           <FileText size={20} />
         </div>
 
-        <button
-          type="button"
-          onClick={async () => {
-            if (!window.confirm("Delete this paper?")) return;
-            try {
-              await deleteDocument(document.id);
-              window.location.reload();
-            } catch {
-              window.alert("Unable to delete this paper.");
-            }
-          }}
-          aria-label={`Delete ${document.title}`}
-          className="rounded-lg p-2 text-slate-700 transition hover:bg-white/[0.04] hover:text-slate-300"
-        >
-          <MoreHorizontal size={17} />
-        </button>
+        <div className="flex gap-1">
+          <button type="button" onClick={async () => { const next = window.prompt("Paper title", title)?.trim(); if (!next || next === title) return; try { await updateDocumentTitle(document.id, next); setTitle(next); } catch { window.alert("Unable to rename this paper."); } }} aria-label={`Rename ${title}`} className="rounded-lg p-2 text-slate-600 hover:text-cyan-300"><Pencil size={15}/></button>
+          <button type="button" onClick={() => downloadDocument(document.id, document.originalName)} aria-label={`Download ${title}`} className="rounded-lg p-2 text-slate-600 hover:text-cyan-300"><Download size={15}/></button>
+          <button type="button" onClick={async () => { if (!window.confirm("Delete this paper?")) return; try { await deleteDocument(document.id); window.location.reload(); } catch { window.alert("Unable to delete this paper."); } }} aria-label={`Delete ${title}`} className="rounded-lg p-2 text-slate-600 hover:text-red-400"><Trash2 size={15}/></button>
+        </div>
       </div>
 
       <div className="mt-5">
         <h4
           className="truncate text-sm font-semibold text-slate-200"
-          title={document.title}
+          title={title}
         >
-          {document.title}
+          {title}
         </h4>
 
         <p

@@ -121,7 +121,8 @@ export const askQuestion = async (
     await addMessage(
       activeConversationId,
       "ASSISTANT",
-      result.answer
+      result.answer,
+      result.sources
     );
 
     // ------------------------------------------------

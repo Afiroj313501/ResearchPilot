@@ -81,3 +81,21 @@ export const deleteDocument = async (
   await prisma.document.delete({ where: { id: documentId } });
   if (document.fileUrl) await fs.unlink(document.fileUrl).catch(() => {});
 };
+
+export const updateDocumentTitle = async (
+  userId: string,
+  documentId: string,
+  title: string
+) => {
+  const document = await prisma.document.findFirst({
+    where: { id: documentId, collection: { userId } },
+  });
+  if (!document) throw new AppError("Document not found", 404);
+  return prisma.document.update({ where: { id: documentId }, data: { title } });
+};
+
+export const getDocumentForUser = async (userId: string, documentId: string) => {
+  const document = await prisma.document.findFirst({ where: { id: documentId, collection: { userId } } });
+  if (!document) throw new AppError("Document not found", 404);
+  return document;
+};

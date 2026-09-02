@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 import prisma from "../config/database";
+import { AppError } from "../utils/app-error";
 
 import {
   buildRAGContext,
@@ -18,7 +19,53 @@ const ai = new GoogleGenAI({
   apiKey,
 });
 
-const GENERATION_MODEL = "gemini-3.6-flash";
+// Set GEMINI_FALLBACK_MODELS to models enabled for the same API key. A model
+// can be unavailable independently, so a fallback is more resilient than a
+// single fixed endpoint. Do not assume every account has a free allowance.
+const GENERATION_MODELS = [
+  process.env.GEMINI_MODEL || "gemini-3.6-flash",
+  ...(process.env.GEMINI_FALLBACK_MODELS || "gemini-3.5-flash,gemini-3.5-flash-lite")
+    .split(",")
+    .map((model) => model.trim())
+    .filter(Boolean),
+].filter((model, index, models) => models.indexOf(model) === index);
+
+const isTransientModelError = (error: unknown): boolean => {
+  const status = (error as { status?: number })?.status;
+  const message = error instanceof Error ? error.message : String(error);
+  return status === 408 || status === 429 || (status !== undefined && status >= 500) ||
+    /RESOURCE_EXHAUSTED|UNAVAILABLE|overloaded|timeout|temporarily/i.test(message);
+};
+
+const pause = (milliseconds: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, milliseconds));
+
+const generateWithFallback = async (prompt: string): Promise<string> => {
+  let lastError: unknown;
+
+  for (const model of GENERATION_MODELS) {
+    // One short retry absorbs brief overloads without immediately moving to a
+    // lower-cost fallback model.
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const response = await ai.models.generateContent({ model, contents: prompt });
+        const answer = response.text?.trim();
+        if (!answer) throw new Error("Gemini returned an empty answer");
+        return answer;
+      } catch (error) {
+        lastError = error;
+        if (!isTransientModelError(error)) break;
+        if (attempt === 0) await pause(700 + Math.floor(Math.random() * 300));
+      }
+    }
+  }
+
+  console.error("All configured Gemini models failed:", lastError);
+  throw new AppError(
+    "The AI service is temporarily busy. Please try your question again shortly.",
+    503
+  );
+};
 
 export interface RAGAnswer {
   answer: string;
@@ -100,20 +147,7 @@ Now provide the best possible answer based
 strictly on the research context.
 `;
 
-  const response =
-    await ai.models.generateContent({
-      model: GENERATION_MODEL,
-      contents: prompt,
-    });
-
-  const answer =
-    response.text?.trim();
-
-  if (!answer) {
-    throw new Error(
-      "Gemini returned an empty answer"
-    );
-  }
+  const answer = await generateWithFallback(prompt);
 
   return {
     answer,

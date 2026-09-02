@@ -1,5 +1,6 @@
 import prisma from "../config/database";
 import { AppError } from "../utils/app-error";
+import type { Prisma } from "@prisma/client";
 
 const generateConversationTitle = (
   question: string
@@ -106,12 +107,14 @@ export const addMessage = async (
     | "ASSISTANT"
     | "SYSTEM",
   content: string
+  , sources?: Prisma.InputJsonValue
 ) => {
   return prisma.message.create({
     data: {
       conversationId,
       role,
       content,
+      ...(sources ? { sources } : {}),
     },
   });
 };
