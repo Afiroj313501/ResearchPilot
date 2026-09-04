@@ -1,3 +1,4 @@
+import fs from "fs/promises";
 import { extractPdfText } from "../utils/pdf.util";
 import { createChunks } from "../utils/chunk.util";
 
@@ -7,7 +8,8 @@ const filePath =
 const run = async () => {
   try {
     // Step 1: Extract PDF text
-    const result = await extractPdfText(filePath);
+    const fileBuffer = await fs.readFile(filePath);
+    const result = await extractPdfText(fileBuffer);
 
     console.log(
       "✅ PDF extraction successful"

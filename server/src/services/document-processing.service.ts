@@ -5,6 +5,7 @@ import { extractPdfText } from "../utils/pdf.util";
 import { createChunks } from "../utils/chunk.util";
 
 import { embedDocumentChunks } from "./embedding.service";
+import { readPdf } from "./storage.service";
 
 export const processDocument = async (
   documentId: string
@@ -39,9 +40,8 @@ export const processDocument = async (
 
     console.log("📄 Extracting PDF text...");
 
-    const pdf = await extractPdfText(
-      document.fileUrl
-    );
+    const pdfBuffer = await readPdf(document.fileUrl);
+    const pdf = await extractPdfText(pdfBuffer);
 
     console.log(
       `✅ Extracted ${pdf.pageCount} pages`

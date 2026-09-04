@@ -25,3 +25,6 @@ Thumbs.db
 
 # Generated Prisma client
 /src/generated/prisma
+
+# Local PDF uploads
+uploads/

@@ -1,4 +1,5 @@
 import api from "./api";
+import type { ChatSource } from "./chat.api";
 
 export interface Conversation {
   id: string;
@@ -16,6 +17,7 @@ export interface ConversationMessage {
   role: "USER" | "ASSISTANT" | "SYSTEM";
   content: string;
   createdAt: string;
+  sources?: ChatSource[];
 }
 
 export const getConversations = async (collectionId?: string) => {

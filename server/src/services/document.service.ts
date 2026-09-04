@@ -1,14 +1,18 @@
-import fs from "fs/promises";
+import path from "path";
 
 import prisma from "../config/database";
 import { AppError } from "../utils/app-error";
+import { removePdf, storePdf } from "./storage.service";
 
 export const createDocument = async (
   userId: string,
   collectionId: string,
   file: Express.Multer.File
 ) => {
-  // Verify that the collection belongs to the authenticated user
+  if (!file.buffer?.length) {
+    throw new AppError("PDF file is required", 400);
+  }
+
   const collection = await prisma.collection.findFirst({
     where: {
       id: collectionId,
@@ -16,24 +20,20 @@ export const createDocument = async (
     },
   });
 
-  // If collection doesn't exist or doesn't belong to user,
-  // remove the uploaded file and reject the request.
   if (!collection) {
-    await fs.unlink(file.path).catch(() => {});
-
-    throw new AppError(
-      "Collection not found",
-      404
-    );
+    throw new AppError("Collection not found", 404);
   }
 
-  // Create document metadata in PostgreSQL
+  const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
+  const objectPath = `${userId}/${collectionId}/${uniqueName}`;
+  const fileUrl = await storePdf(file.buffer, objectPath);
+
   const document = await prisma.document.create({
     data: {
       collectionId,
       title: file.originalname.replace(/\.pdf$/i, ""),
       originalName: file.originalname,
-      fileUrl: file.path,
+      fileUrl,
       mimeType: file.mimetype,
       fileSize: file.size,
       status: "PENDING",
@@ -79,7 +79,7 @@ export const deleteDocument = async (
   if (!document) throw new AppError("Document not found", 404);
 
   await prisma.document.delete({ where: { id: documentId } });
-  if (document.fileUrl) await fs.unlink(document.fileUrl).catch(() => {});
+  if (document.fileUrl) await removePdf(document.fileUrl);
 };
 
 export const updateDocumentTitle = async (

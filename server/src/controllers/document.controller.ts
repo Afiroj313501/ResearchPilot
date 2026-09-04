@@ -14,6 +14,7 @@ import {
 import {
   processDocument,
 } from "../services/document-processing.service";
+import { readPdf } from "../services/storage.service";
 
 import type {
   AuthenticatedRequest,
@@ -159,6 +160,12 @@ export const downloadDocument = async (req: AuthenticatedRequest, res: Response,
     if (!documentId || Array.isArray(documentId)) throw new AppError("Invalid document ID", 400);
     const document = await getDocumentForUser(req.userId, documentId);
     if (!document.fileUrl) throw new AppError("Document file not found", 404);
-    res.download(document.fileUrl, document.originalName);
+    const fileBuffer = await readPdf(document.fileUrl);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${document.originalName.replace(/"/g, "")}"`
+    );
+    res.setHeader("Content-Type", document.mimeType || "application/pdf");
+    res.send(fileBuffer);
   } catch (error) { next(error); }
 };

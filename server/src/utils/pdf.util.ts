@@ -1,4 +1,3 @@
-import fs from "fs/promises";
 import { PDFParse } from "pdf-parse";
 
 export interface ExtractedPage {
@@ -13,10 +12,8 @@ export interface ExtractedPdf {
 }
 
 export const extractPdfText = async (
-  filePath: string
+  fileBuffer: Buffer
 ): Promise<ExtractedPdf> => {
-  const fileBuffer = await fs.readFile(filePath);
-
   const parser = new PDFParse({
     data: fileBuffer,
   });
